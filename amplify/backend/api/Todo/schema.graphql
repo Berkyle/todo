@@ -1,0 +1,14 @@
+type Template @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  title: String!
+  durationMinutes: Int
+}
+
+type Todo @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  title: String!
+  isComplete: Boolean!
+  template: Template @connection
+  order: String!
+}
+ 
