@@ -12,8 +12,7 @@ class TodoRepository {
     return todos;
   }
 
-  Future<void> createTodo(String title, String order) async {
-    final newTodo = Todo(title: title, isComplete: false, order: order);
+  Future<void> createTodo(Todo newTodo) async {
     await Amplify.DataStore.save(newTodo);
   }
 
@@ -22,17 +21,7 @@ class TodoRepository {
     await Amplify.DataStore.save(newTodoTemplate);
   }
 
-  Future<void> updateTodo(
-    Todo todo, {
-    String? title,
-    bool? isComplete,
-    String? order,
-  }) async {
-    final updatedTodo = todo.copyWith(
-      title: title ?? todo.title,
-      isComplete: isComplete ?? todo.isComplete,
-      order: order ?? todo.order,
-    );
+  Future<void> updateTodo(Todo updatedTodo) async {
     await Amplify.DataStore.save(updatedTodo);
   }
 

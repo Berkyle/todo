@@ -80,12 +80,12 @@ class TodoCubit extends Cubit<TodoState> {
   void createTodo(String title) async {
     final state = this.state;
     if (state is ListTodosSuccess) {
-      if (state.orderedTodos.length > 0) {
-        final order = OrderId.getNext(state.orderedTodos.last.order);
-        await _todoRepo.createTodo(title, order);
-      } else {
-        await _todoRepo.createTodo(title, OrderId.getInitialId());
-      }
+      final order = state.orderedTodos.length > 0
+          ? OrderId.getNext(state.orderedTodos.last.order)
+          : OrderId.getInitialId();
+      final newTodo = Todo(title: title, isComplete: false, order: order);
+      emit(ListTodosSuccess(todos: [...state.todos]..add(newTodo)));
+      await _todoRepo.createTodo(newTodo);
     }
   }
 
@@ -94,17 +94,23 @@ class TodoCubit extends Cubit<TodoState> {
   }
 
   Future<void> updateTodo(
-    Todo todo, {
+    Todo todoToUpdate, {
     String? title,
     bool? isComplete,
     String? order,
   }) async {
-    await _todoRepo.updateTodo(
-      todo,
-      title: title ?? todo.title,
-      isComplete: isComplete ?? todo.isComplete,
-      order: order ?? todo.order,
-    );
+    final state = this.state;
+    if (state is ListTodosSuccess) {
+      final updatedTodo = todoToUpdate.copyWith(
+        title: title ?? todoToUpdate.title,
+        isComplete: isComplete ?? todoToUpdate.isComplete,
+        order: order ?? todoToUpdate.order,
+      );
+      final updatedTodos =
+          state.todos.map((todo) => todo.id == todoToUpdate.id ? updatedTodo : todo).toList();
+      emit(ListTodosSuccess(todos: updatedTodos));
+      await _todoRepo.updateTodo(updatedTodo);
+    }
   }
 
   void moveTodo(int startIndex, int endIndex) async {
@@ -126,7 +132,7 @@ class TodoCubit extends Cubit<TodoState> {
         if (todo.id == movingTodo.id) return movingTodo.copyWith(order: updatedOrder);
         return todo;
       }).toList()));
-      await _todoRepo.updateTodo(movingTodo, order: updatedOrder);
+      await updateTodo(movingTodo, order: updatedOrder);
     }
   }
 
