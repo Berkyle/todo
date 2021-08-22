@@ -95,53 +95,55 @@ class _TodosViewState extends State<TodosView> {
   }
 
   Widget _todosListView(List<Todo> todos) {
-    return ReorderableListView.builder(
-      itemCount: todos.length,
-      onReorder: (indexA, indexB) async {
-        BlocProvider.of<TodoCubit>(context).moveTodo(indexA, indexB);
-      },
-      itemBuilder: (context, index) {
-        final todo = todos[index];
-        return Dismissible(
-          key: Key(todo.id),
-          onDismissed: (direction) {
-            if (direction == DismissDirection.startToEnd) {
-              BlocProvider.of<TodoCubit>(context).createTodoTemplate(todo.title);
-            }
-            BlocProvider.of<TodoCubit>(context).deleteTodo(todo);
-          },
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(0, 4, 0, 4),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Color(0xAAAAAAAA), width: 1.0)),
-            ),
-            child: ListTile(
-              title: Text(todo.title),
-              onTap: () => _showTodoFormModal(todo),
-              leading: Checkbox(
-                shape: CircleBorder(),
-                value: todo.isComplete,
-                onChanged: (newValue) {
-                  BlocProvider.of<TodoCubit>(context).updateTodo(todo, isComplete: newValue!);
-                },
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    return Scrollbar(
+      child: ReorderableListView.builder(
+        itemCount: todos.length,
+        onReorder: (indexA, indexB) async {
+          BlocProvider.of<TodoCubit>(context).moveTodo(indexA, indexB);
+        },
+        itemBuilder: (context, index) {
+          final todo = todos[index];
+          return Dismissible(
+            key: Key(todo.id),
+            onDismissed: (direction) {
+              if (direction == DismissDirection.startToEnd) {
+                BlocProvider.of<TodoCubit>(context).createTodoTemplate(todo.title);
+              }
+              BlocProvider.of<TodoCubit>(context).deleteTodo(todo);
+            },
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(0, 4, 0, 4),
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: Color(0xAAAAAAAA), width: 1.0)),
+              ),
+              child: ListTile(
+                title: Text(todo.title),
+                onTap: () => _showTodoFormModal(todo),
+                leading: Checkbox(
+                  shape: CircleBorder(),
+                  value: todo.isComplete,
+                  onChanged: (newValue) {
+                    BlocProvider.of<TodoCubit>(context).updateTodo(todo, isComplete: newValue!);
+                  },
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
               ),
             ),
-          ),
-          background: Container(
-            alignment: Alignment.centerLeft,
-            padding: EdgeInsets.symmetric(horizontal: 20),
-            color: Colors.blue,
-            child: Icon(Icons.restart_alt, color: Colors.white, size: 32),
-          ),
-          secondaryBackground: Container(
-            alignment: Alignment.centerRight,
-            padding: EdgeInsets.symmetric(horizontal: 20),
-            color: Colors.red,
-            child: Icon(Icons.delete, color: Colors.white, size: 32),
-          ),
-        );
-      },
+            background: Container(
+              alignment: Alignment.centerLeft,
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              color: Colors.blue,
+              child: Icon(Icons.restart_alt, color: Colors.white, size: 32),
+            ),
+            secondaryBackground: Container(
+              alignment: Alignment.centerRight,
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              color: Colors.red,
+              child: Icon(Icons.delete, color: Colors.white, size: 32),
+            ),
+          );
+        },
+      ),
     );
   }
 }
