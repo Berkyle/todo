@@ -89,10 +89,6 @@ class TodoCubit extends Cubit<TodoState> {
     }
   }
 
-  void createTodoTemplate(String title) async {
-    await _todoRepo.createTodoTemplate(title);
-  }
-
   Future<void> updateTodo(
     Todo todoToUpdate, {
     String? title,

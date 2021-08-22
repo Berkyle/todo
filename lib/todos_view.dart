@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:todo/todo_cubit.dart';
 import 'package:todo/todo_form_modal.dart';
+import 'package:todo/todos_api.dart';
 
 import 'loading_view.dart';
 import 'models/Todo.dart';
@@ -36,6 +37,9 @@ class _TodosViewState extends State<TodosView> {
         ],
         onTap: (itemNumber) {
           setState(() {
+            if (itemNumber == 1) {
+              listTodos();
+            }
             _currentNavigationIndex = itemNumber;
           });
         },
@@ -62,7 +66,15 @@ class _TodosViewState extends State<TodosView> {
   }
 
   AppBar _navbar() {
-    return AppBar(title: Text('Todos'));
+    return AppBar(title: Text('Todos'), actions: <Widget>[
+      IconButton(
+        icon: const Icon(Icons.favorite),
+        tooltip: 'Favorite this Queue',
+        onPressed: () {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Queue saved')));
+        },
+      ),
+    ]);
   }
 
   void _showTodoFormModal(Todo? selectedTodo) {
@@ -107,7 +119,8 @@ class _TodosViewState extends State<TodosView> {
             key: Key(todo.id),
             onDismissed: (direction) {
               if (direction == DismissDirection.startToEnd) {
-                BlocProvider.of<TodoCubit>(context).createTodoTemplate(todo.title);
+                // Send to another Queue instead!
+                // BlocProvider.of<TodoCubit>(context).createTodoTemplate(todo.title);
               }
               BlocProvider.of<TodoCubit>(context).deleteTodo(todo);
             },

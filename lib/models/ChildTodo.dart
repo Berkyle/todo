@@ -15,18 +15,19 @@
 
 // ignore_for_file: public_member_api_docs
 
+import 'ModelProvider.dart';
 import 'package:amplify_datastore_plugin_interface/amplify_datastore_plugin_interface.dart';
 import 'package:flutter/foundation.dart';
 
 
-/** This is an auto generated class representing the Todo type in your schema. */
+/** This is an auto generated class representing the ChildTodo type in your schema. */
 @immutable
-class Todo extends Model {
-  static const classType = const _TodoModelType();
+class ChildTodo extends Model {
+  static const classType = const _ChildTodoModelType();
   final String id;
   final String? _title;
   final bool? _isComplete;
-  final String? _queueId;
+  final Todo? _parent;
   final String? _order;
 
   @override
@@ -53,8 +54,8 @@ class Todo extends Model {
     }
   }
   
-  String? get queueId {
-    return _queueId;
+  Todo? get parent {
+    return _parent;
   }
   
   String get order {
@@ -65,14 +66,14 @@ class Todo extends Model {
     }
   }
   
-  const Todo._internal({required this.id, required title, required isComplete, queueId, required order}): _title = title, _isComplete = isComplete, _queueId = queueId, _order = order;
+  const ChildTodo._internal({required this.id, required title, required isComplete, parent, required order}): _title = title, _isComplete = isComplete, _parent = parent, _order = order;
   
-  factory Todo({String? id, required String title, required bool isComplete, String? queueId, required String order}) {
-    return Todo._internal(
+  factory ChildTodo({String? id, required String title, required bool isComplete, Todo? parent, required String order}) {
+    return ChildTodo._internal(
       id: id == null ? UUID.getUUID() : id,
       title: title,
       isComplete: isComplete,
-      queueId: queueId,
+      parent: parent,
       order: order);
   }
   
@@ -83,11 +84,11 @@ class Todo extends Model {
   @override
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
-    return other is Todo &&
+    return other is ChildTodo &&
       id == other.id &&
       _title == other._title &&
       _isComplete == other._isComplete &&
-      _queueId == other._queueId &&
+      _parent == other._parent &&
       _order == other._order;
   }
   
@@ -98,45 +99,49 @@ class Todo extends Model {
   String toString() {
     var buffer = new StringBuffer();
     
-    buffer.write("Todo {");
+    buffer.write("ChildTodo {");
     buffer.write("id=" + "$id" + ", ");
     buffer.write("title=" + "$_title" + ", ");
     buffer.write("isComplete=" + (_isComplete != null ? _isComplete!.toString() : "null") + ", ");
-    buffer.write("queueId=" + "$_queueId" + ", ");
+    buffer.write("parent=" + (_parent != null ? _parent!.toString() : "null") + ", ");
     buffer.write("order=" + "$_order");
     buffer.write("}");
     
     return buffer.toString();
   }
   
-  Todo copyWith({String? id, String? title, bool? isComplete, String? queueId, String? order}) {
-    return Todo(
+  ChildTodo copyWith({String? id, String? title, bool? isComplete, Todo? parent, String? order}) {
+    return ChildTodo(
       id: id ?? this.id,
       title: title ?? this.title,
       isComplete: isComplete ?? this.isComplete,
-      queueId: queueId ?? this.queueId,
+      parent: parent ?? this.parent,
       order: order ?? this.order);
   }
   
-  Todo.fromJson(Map<String, dynamic> json)  
+  ChildTodo.fromJson(Map<String, dynamic> json)  
     : id = json['id'],
       _title = json['title'],
       _isComplete = json['isComplete'],
-      _queueId = json['queueId'],
+      _parent = json['parent']?['serializedData'] != null
+        ? Todo.fromJson(new Map<String, dynamic>.from(json['parent']['serializedData']))
+        : null,
       _order = json['order'];
   
   Map<String, dynamic> toJson() => {
-    'id': id, 'title': _title, 'isComplete': _isComplete, 'queueId': _queueId, 'order': _order
+    'id': id, 'title': _title, 'isComplete': _isComplete, 'parent': _parent?.toJson(), 'order': _order
   };
 
-  static final QueryField ID = QueryField(fieldName: "todo.id");
+  static final QueryField ID = QueryField(fieldName: "childTodo.id");
   static final QueryField TITLE = QueryField(fieldName: "title");
   static final QueryField ISCOMPLETE = QueryField(fieldName: "isComplete");
-  static final QueryField QUEUEID = QueryField(fieldName: "queueId");
+  static final QueryField PARENT = QueryField(
+    fieldName: "parent",
+    fieldType: ModelFieldType(ModelFieldTypeEnum.model, ofModelName: (Todo).toString()));
   static final QueryField ORDER = QueryField(fieldName: "order");
   static var schema = Model.defineSchema(define: (ModelSchemaDefinition modelSchemaDefinition) {
-    modelSchemaDefinition.name = "Todo";
-    modelSchemaDefinition.pluralName = "Todos";
+    modelSchemaDefinition.name = "ChildTodo";
+    modelSchemaDefinition.pluralName = "ChildTodos";
     
     modelSchemaDefinition.authRules = [
       AuthRule(
@@ -152,36 +157,37 @@ class Todo extends Model {
     modelSchemaDefinition.addField(ModelFieldDefinition.id());
     
     modelSchemaDefinition.addField(ModelFieldDefinition.field(
-      key: Todo.TITLE,
+      key: ChildTodo.TITLE,
       isRequired: true,
       ofType: ModelFieldType(ModelFieldTypeEnum.string)
     ));
     
     modelSchemaDefinition.addField(ModelFieldDefinition.field(
-      key: Todo.ISCOMPLETE,
+      key: ChildTodo.ISCOMPLETE,
       isRequired: true,
       ofType: ModelFieldType(ModelFieldTypeEnum.bool)
     ));
     
-    modelSchemaDefinition.addField(ModelFieldDefinition.field(
-      key: Todo.QUEUEID,
+    modelSchemaDefinition.addField(ModelFieldDefinition.belongsTo(
+      key: ChildTodo.PARENT,
       isRequired: false,
-      ofType: ModelFieldType(ModelFieldTypeEnum.string)
+      targetName: "childTodoParentId",
+      ofModelName: (Todo).toString()
     ));
     
     modelSchemaDefinition.addField(ModelFieldDefinition.field(
-      key: Todo.ORDER,
+      key: ChildTodo.ORDER,
       isRequired: true,
       ofType: ModelFieldType(ModelFieldTypeEnum.string)
     ));
   });
 }
 
-class _TodoModelType extends ModelType<Todo> {
-  const _TodoModelType();
+class _ChildTodoModelType extends ModelType<ChildTodo> {
+  const _ChildTodoModelType();
   
   @override
-  Todo fromJson(Map<String, dynamic> jsonData) {
-    return Todo.fromJson(jsonData);
+  ChildTodo fromJson(Map<String, dynamic> jsonData) {
+    return ChildTodo.fromJson(jsonData);
   }
 }

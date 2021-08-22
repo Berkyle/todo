@@ -16,25 +16,25 @@
 // ignore_for_file: public_member_api_docs
 
 import 'package:amplify_datastore_plugin_interface/amplify_datastore_plugin_interface.dart';
-import 'Template.dart';
+import 'Queue.dart';
 import 'Todo.dart';
 
-export 'Template.dart';
+export 'Queue.dart';
 export 'Todo.dart';
 
 class ModelProvider implements ModelProviderInterface {
   @override
-  String version = "de3dfbfaf0881b1a5c4438a772790f8d";
+  String version = "af76c3eda49d0c5619ad429b9f603e90";
   @override
-  List<ModelSchema> modelSchemas = [Template.schema, Todo.schema];
+  List<ModelSchema> modelSchemas = [Queue.schema, Todo.schema];
   static final ModelProvider _instance = ModelProvider();
 
   static ModelProvider get instance => _instance;
   
   ModelType getModelTypeByModelName(String modelName) {
     switch(modelName) {
-    case "Template": {
-    return Template.classType;
+    case "Queue": {
+    return Queue.classType;
     }
     break;
     case "Todo": {

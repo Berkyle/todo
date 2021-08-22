@@ -1,14 +1,23 @@
-type Template @model @auth(rules: [{allow: public}]) {
-  id: ID!
-  title: String!
-  durationMinutes: Int
-}
-
-type Todo @model @auth(rules: [{allow: public}]) {
+type Todo
+  @model
+  @auth(rules: [{ allow: public }])
+  @key(name: "todosByOrder", fields: ["order"], queryField: "todosByOrder")
+  @key(name: "byQueue", fields: ["queueId", "id"]) {
   id: ID!
   title: String!
   isComplete: Boolean!
-  template: Template @connection
+  # queue: Queue @connection
+  queueId: ID
   order: String!
 }
- 
+
+type Queue
+  @model
+  @auth(rules: [{ allow: public }])
+  @key(name: "queuesByOrder", fields: ["order"], queryField: "queuesByOrder") {
+  id: ID!
+  title: String!
+  favorited: Boolean!
+  order: String!
+  todos: [Todo] @connection(keyName: "byQueue", fields: ["id"])
+}

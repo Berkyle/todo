@@ -16,11 +16,6 @@ class TodoRepository {
     await Amplify.DataStore.save(newTodo);
   }
 
-  Future<void> createTodoTemplate(String title) async {
-    final newTodoTemplate = Template(title: title);
-    await Amplify.DataStore.save(newTodoTemplate);
-  }
-
   Future<void> updateTodo(Todo updatedTodo) async {
     await Amplify.DataStore.save(updatedTodo);
   }

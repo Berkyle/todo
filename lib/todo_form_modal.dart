@@ -50,15 +50,16 @@ class _TodoFormModalState extends State<TodoFormModal> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               ElevatedButton(
-                onPressed: _selectedTodo != null
-                    ? null
-                    : () {
-                        BlocProvider.of<TodoCubit>(context)
-                            .createTodoTemplate(_titleController.text);
-                        _titleController.text = '';
-                        Navigator.of(context).pop();
-                      },
-                child: Text('Save Recurring Todo'),
+                onPressed: null,
+                // onPressed: _selectedTodo != null
+                //     ? null
+                //     : () {
+                //         // BlocProvider.of<TodoCubit>(context)
+                //         //     .createTodoTemplate(_titleController.text);
+                //         _titleController.text = '';
+                //         Navigator.of(context).pop();
+                //       },
+                child: Text('Add to another queue'),
               ),
               ElevatedButton(
                 onPressed: () {
