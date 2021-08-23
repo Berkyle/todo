@@ -7,11 +7,11 @@ import 'package:todo/todos_view.dart';
 
 // Amplify Flutter Packages
 import 'package:amplify_flutter/amplify.dart';
-import 'package:amplify_datastore/amplify_datastore.dart';
+// import 'package:amplify_datastore/amplify_datastore.dart';
 import 'package:amplify_api/amplify_api.dart';
 
 // Generated in previous step
-import 'models/ModelProvider.dart';
+// import 'models/ModelProvider.dart';
 import 'amplifyconfiguration.dart';
 
 void main() {
@@ -49,7 +49,7 @@ class _MyAppState extends State<MyApp> {
     // Once Plugins are added, configure Amplify
     try {
       await Future.wait([
-        Amplify.addPlugin(AmplifyDataStore(modelProvider: ModelProvider.instance)),
+        // Amplify.addPlugin(AmplifyDataStore(modelProvider: ModelProvider.instance)),
         Amplify.addPlugin(AmplifyAPI()),
         Amplify.addPlugin(AmplifyAuthCognito()),
       ]);

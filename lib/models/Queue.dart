@@ -74,12 +74,20 @@ class Queue extends Model {
     }
   }
 
-  List<Todo>? get todos {
-    return _todos;
+  List<Todo> get todos {
+    try {
+      return _todos!;
+    } catch (e) {
+      throw new DataStoreException(
+          DataStoreExceptionMessages.codeGenRequiredFieldForceCastExceptionMessage,
+          recoverySuggestion:
+              DataStoreExceptionMessages.codeGenRequiredFieldForceCastRecoverySuggestion,
+          underlyingException: e.toString());
+    }
   }
 
   const Queue._internal(
-      {required this.id, required title, required favorited, required order, todos})
+      {required this.id, required title, required favorited, required order, required todos})
       : _title = title,
         _favorited = favorited,
         _order = order,
@@ -90,7 +98,7 @@ class Queue extends Model {
       required String title,
       required bool favorited,
       required String order,
-      List<Todo>? todos}) {
+      required List<Todo> todos}) {
     return Queue._internal(
         id: id == null ? UUID.getUUID() : id,
         title: title,
@@ -157,7 +165,7 @@ class Queue extends Model {
         'title': _title,
         'favorited': _favorited,
         'order': _order,
-        'todos': _todos?.map((e) => e?.toJson())?.toList()
+        'todos': _todos?.map((e) => e.toJson()).toList()
       };
 
   static final QueryField ID = QueryField(fieldName: "queue.id");

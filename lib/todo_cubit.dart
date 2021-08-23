@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:todo/models/ModelProvider.dart';
-import 'package:todo/todo_repository.dart';
-import 'package:amplify_datastore_plugin_interface/amplify_datastore_plugin_interface.dart';
+import 'package:todo/order_id.dart';
+import 'package:todo/todos_api.dart';
 
 import 'models/Todo.dart';
 
@@ -41,8 +41,6 @@ class ListTodosFailure extends TodoState {
 }
 
 class TodoCubit extends Cubit<TodoState> {
-  final _todoRepo = TodoRepository();
-
   TodoCubit() : super(LoadingTodos());
 
   void getTodos() async {
@@ -51,7 +49,7 @@ class TodoCubit extends Cubit<TodoState> {
     }
 
     try {
-      final todos = await _todoRepo.getTodos();
+      final todos = await TodoApi.listTodos();
       emit(ListTodosSuccess(todos: todos));
     } catch (e) {
       if (e is Exception) {
@@ -60,21 +58,34 @@ class TodoCubit extends Cubit<TodoState> {
     }
   }
 
-  void observeTodos() async {
-    final todosStream = _todoRepo.observeTodos();
-    todosStream.listen((_) => getTodos());
-    // todosStream.listen((event) {
-    //   if (event.eventType == EventType.create) {
-    //     final newTodo = event.item;
-    //     final currentTodosState = state.todos == null ? null : [...state.todos!];
-    //     if (currentTodosState != null) {
-    //       currentTodosState.add(newTodo);
-    //       emit(ListTodosSuccess(todos: currentTodosState));
-    //     }
-    //   } else if (event.eventType == EventType.update) {
-    //   } else if (event.eventType == EventType.delete) {
-    //   }
-    // });
+  void _onNewTodo(Todo newTodo) {
+    final state = this.state;
+    if (state is ListTodosSuccess && state.todoMap[newTodo.id] == null) {
+      emit(ListTodosSuccess(todos: [...state.todos]..add(newTodo)));
+    }
+  }
+
+  void _onUpdatedTodo(Todo updatedTodo) {
+    final state = this.state;
+    if (state is ListTodosSuccess) {
+      final updatedTodos =
+          state.todos.map((todo) => todo.id == updatedTodo.id ? updatedTodo : todo).toList();
+      emit(ListTodosSuccess(todos: updatedTodos));
+    }
+  }
+
+  void _onDeletedTodo(String deletedTodoId) {
+    final state = this.state;
+    if (state is ListTodosSuccess && state.todoMap[deletedTodoId] != null) {
+      emit(ListTodosSuccess(
+          todos: [...state.todos].where((todo) => todo.id != deletedTodoId).toList()));
+    }
+  }
+
+  void observeTodos() {
+    TodoApi.observeCreateTodo(_onNewTodo);
+    TodoApi.observeUpdateTodo(_onUpdatedTodo);
+    TodoApi.observeDeleteTodo(_onDeletedTodo);
   }
 
   void createTodo(String title) async {
@@ -85,7 +96,7 @@ class TodoCubit extends Cubit<TodoState> {
           : OrderId.getInitialId();
       final newTodo = Todo(title: title, isComplete: false, order: order);
       emit(ListTodosSuccess(todos: [...state.todos]..add(newTodo)));
-      await _todoRepo.createTodo(newTodo);
+      await TodoApi.createTodo(newTodo);
     }
   }
 
@@ -105,7 +116,7 @@ class TodoCubit extends Cubit<TodoState> {
       final updatedTodos =
           state.todos.map((todo) => todo.id == todoToUpdate.id ? updatedTodo : todo).toList();
       emit(ListTodosSuccess(todos: updatedTodos));
-      await _todoRepo.updateTodo(updatedTodo);
+      await TodoApi.updateTodo(updatedTodo);
     }
   }
 
@@ -115,7 +126,7 @@ class TodoCubit extends Cubit<TodoState> {
       final movingTodo = state.orderedTodos[startIndex];
       var updatedOrder = '';
       if (endIndex == 0) {
-        updatedOrder = OrderId.getPrevious(state.orderedTodos[0].order);
+        updatedOrder = OrderId.getPrevious(state.orderedTodos.first.order);
       } else if (endIndex == state.todos.length) {
         updatedOrder = OrderId.getNext(state.orderedTodos.last.order);
       } else {
@@ -123,12 +134,13 @@ class TodoCubit extends Cubit<TodoState> {
         final upperOrder = state.orderedTodos[endIndex].order;
         updatedOrder = OrderId.getIdBetween(lowerOrder, upperOrder);
       }
+      final updatedTodo = movingTodo.copyWith(order: updatedOrder);
       emit(ListTodosSuccess(
           todos: state.todos.map((todo) {
-        if (todo.id == movingTodo.id) return movingTodo.copyWith(order: updatedOrder);
+        if (todo.id == movingTodo.id) return updatedTodo;
         return todo;
       }).toList()));
-      await updateTodo(movingTodo, order: updatedOrder);
+      await updateTodo(updatedTodo, order: updatedOrder);
     }
   }
 
@@ -137,59 +149,7 @@ class TodoCubit extends Cubit<TodoState> {
     if (state is ListTodosSuccess) {
       emit(ListTodosSuccess(
           todos: state.todos.where((todo) => todo.id != todoToDelete.id).toList()));
-      await _todoRepo.deleteTodo(todoToDelete);
+      await TodoApi.deleteTodo(todoToDelete);
     }
   }
-}
-
-class OrderId {
-  static String getInitialId() => 'mmm'; // 3 fucking "m"s :')
-
-  static String getNext(String id) {
-    if (id.endsWith('z')) {
-      // 'mmz' -> 'mmzm'
-      return id + 'm';
-    } else {
-      // 'mma' -> 'mmb'
-      return id.substring(0, id.length - 1) + fromCharCode(orderIdRank(id[id.length - 1]) + 1);
-    }
-  }
-
-  static String getPrevious(String id) {
-    assert(id != 'a');
-
-    if (id.endsWith('a')) {
-      // 'gmaa' => 'glzzm'
-      var fromRight = 0;
-      while (id[id.length - 1 - fromRight] == 'a' && fromRight < id.length) {
-        fromRight += 1;
-      }
-      if (fromRight == id.length) {
-        throw Exception("Failed to get previous value for id $id"); // probably like 'aaaaa' lol
-      }
-      final charToDecrement = id[id.length - 1 - fromRight];
-      final rolledBackValue = fromCharCode(orderIdRank(charToDecrement) - 1);
-      final endValue = List.filled(fromRight, 'z').join() + 'm';
-      return id.substring(0, id.length - 1 - fromRight) + rolledBackValue + endValue;
-    } else {
-      // 'mmb' -> 'mma'
-      return id.substring(0, id.length - 1) + fromCharCode(orderIdRank(id[id.length - 1]) - 1);
-    }
-  }
-
-  static String getIdBetween(String smallerId, String largerId) {
-    assert(smallerId.compareTo(largerId) == -1);
-
-    if (getNext(smallerId).compareTo(largerId) == -1) {
-      return getNext(smallerId);
-    }
-    if (smallerId.compareTo(getPrevious(largerId)) == -1) {
-      return getPrevious(largerId);
-    }
-    return smallerId + 'm';
-  }
-
-  static int orderIdRank(String orderId) => orderId[0].codeUnits[0];
-
-  static String fromCharCode(int charCode) => String.fromCharCode(charCode);
 }

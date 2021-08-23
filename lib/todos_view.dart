@@ -1,10 +1,10 @@
-import 'dart:async';
+// import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:todo/todo_cubit.dart';
 import 'package:todo/todo_form_modal.dart';
-import 'package:todo/todos_api.dart';
+// import 'package:todo/todos_api.dart';
 
 import 'loading_view.dart';
 import 'models/Todo.dart';
@@ -37,9 +37,13 @@ class _TodosViewState extends State<TodosView> {
         ],
         onTap: (itemNumber) {
           setState(() {
-            if (itemNumber == 1) {
-              listTodos();
-            }
+            // if (itemNumber == 1) {
+            //   listTodos();
+            // } else {
+            //   final newTodo =
+            //       Todo(title: 'a subscription for this todo', isComplete: false, order: 'mmff');
+            //   createTodo(newTodo);
+            // }
             _currentNavigationIndex = itemNumber;
           });
         },

@@ -5,15 +5,21 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "todo",
+      "name": "Debug",
       "request": "launch",
       "type": "dart"
     },
     {
-      "name": "todo (profile mode)",
+      "name": "Profile",
       "request": "launch",
       "type": "dart",
       "flutterMode": "profile"
+    },
+    {
+      "name": "Release",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release"
     }
   ]
 }

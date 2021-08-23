@@ -19,5 +19,5 @@ type Queue
   title: String!
   favorited: Boolean!
   order: String!
-  todos: [Todo] @connection(keyName: "byQueue", fields: ["id"])
+  todos: [Todo]! @connection(keyName: "byQueue", fields: ["id"])
 }
