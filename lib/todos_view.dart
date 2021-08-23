@@ -21,33 +21,7 @@ class _TodosViewState extends State<TodosView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _navbar(),
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.white,
-        currentIndex: _currentNavigationIndex,
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Todos',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.restart_alt),
-            label: 'Recurring Todos',
-          ),
-        ],
-        onTap: (itemNumber) {
-          setState(() {
-            // if (itemNumber == 1) {
-            //   listTodos();
-            // } else {
-            //   final newTodo =
-            //       Todo(title: 'a subscription for this todo', isComplete: false, order: 'mmff');
-            //   createTodo(newTodo);
-            // }
-            _currentNavigationIndex = itemNumber;
-          });
-        },
-      ),
+      appBar: _appbar(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: _floatingActionButton(),
       body: BlocBuilder<TodoCubit, TodoState>(builder: (context, state) {
@@ -62,6 +36,7 @@ class _TodosViewState extends State<TodosView> {
           return LoadingView();
         }
       }),
+      bottomNavigationBar: _navBar(),
     );
   }
 
@@ -69,16 +44,44 @@ class _TodosViewState extends State<TodosView> {
     return Center(child: Text(exception.toString()));
   }
 
-  AppBar _navbar() {
+  AppBar _appbar() {
     return AppBar(title: Text('Todos'), actions: <Widget>[
-      IconButton(
-        icon: const Icon(Icons.favorite),
-        tooltip: 'Favorite this Queue',
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Queue saved')));
-        },
-      ),
+      // IconButton(
+      //   icon: const Icon(Icons.favorite),
+      //   tooltip: 'Favorite this Queue',
+      //   onPressed: () {
+      //     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Queue saved')));
+      //   },
+      // ),
     ]);
+  }
+
+  Widget _navBar() {
+    // return Row(
+    //   children: [
+    //     IconButton(onPressed: () {}, icon: icon),
+    //     IconButton(onPressed: () {}, icon: icon),
+    //   ],
+    // );
+    return BottomNavigationBar(
+      backgroundColor: Colors.white,
+      currentIndex: _currentNavigationIndex,
+      items: const <BottomNavigationBarItem>[
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home),
+          label: 'Todos',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.restart_alt),
+          label: 'Recurring Todos',
+        ),
+      ],
+      onTap: (itemNumber) {
+        setState(() {
+          _currentNavigationIndex = itemNumber;
+        });
+      },
+    );
   }
 
   void _showTodoFormModal(Todo? selectedTodo) {
