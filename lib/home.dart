@@ -29,7 +29,14 @@ class _HomeState extends State<Home> {
   }
 
   AppBar _appbar() {
-    return AppBar(title: Text('Todos'));
+    return AppBar(
+        title: BlocConsumer<AppCubit, int>(
+      listener: (context, state) {}, // I guess I need this
+      builder: (context, state) => AnimatedSwitcher(
+        duration: const Duration(milliseconds: 150),
+        child: Text(state == 0 ? 'Todos' : 'Lists'),
+      ),
+    ));
   }
 
   Widget _navBar() {
@@ -58,9 +65,8 @@ class _HomeState extends State<Home> {
           if (state == 0) {
             BlocProvider.of<AppCubit>(context).showTodoFormModal(context, null);
           } else if (state == 1) {
-            print("I don't have this done yet hehehehe");
+            BlocProvider.of<AppCubit>(context).showQueueFormModal(context, null);
           }
-          // _showTodoFormModal(null);
         },
       ),
     );

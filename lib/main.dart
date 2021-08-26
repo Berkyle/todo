@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:todo/app_cubit.dart';
 import 'package:todo/loading_view.dart';
+import 'package:todo/queue_cubit.dart';
 import 'package:todo/todo_cubit.dart';
 import 'package:todo/home.dart';
 
@@ -35,6 +36,11 @@ class _MyAppState extends State<MyApp> {
         providers: [
           BlocProvider<AppCubit>(
             create: (BuildContext context) => AppCubit(),
+          ),
+          BlocProvider<QueueCubit>(
+            create: (context) => QueueCubit()
+              ..getQueues()
+              ..observeQueues(),
           ),
           BlocProvider<TodoCubit>(
             create: (context) => TodoCubit()

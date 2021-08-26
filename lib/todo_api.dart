@@ -14,14 +14,12 @@ class TodoApi {
       );
 
   static List<Todo> convertResponseToTodoList(List<dynamic> items) {
-    // final data = json.decode(response.data);
-    // return data['listTodos']['items'].map(convertDataToTodo).toList();
     return items.map(convertDataToTodo).toList();
   }
 
   static Future<void> createTodo(Todo newTodo) async {
     String graphQLDocument = '''mutation CreateTodo {
-      createTodo(input: {id: "${newTodo.id}",isComplete: false, title: "${newTodo.title}", order: "${newTodo.order}"}) {
+      createTodo(input: {id: "${newTodo.id}", isComplete: false, title: "${newTodo.title}", order: "${newTodo.order}"}) {
         id
         title
         isComplete

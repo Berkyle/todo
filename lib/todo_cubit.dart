@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:todo/models/ModelProvider.dart';
 import 'package:todo/order_id.dart';
-import 'package:todo/todos_api.dart';
+import 'package:todo/todo_api.dart';
 
 import 'models/Todo.dart';
 
@@ -13,8 +13,6 @@ class LoadingTodos extends TodoState {
   final List<Todo>? todos;
   LoadingTodos({this.todos});
 }
-
-var updated = 0;
 
 class ListTodosSuccess extends TodoState {
   final List<Todo> todos;
