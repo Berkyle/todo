@@ -16,7 +16,7 @@ class _TodosState extends State<Todos> {
   Widget build(BuildContext context) {
     return (BlocBuilder<TodoCubit, TodoState>(builder: (context, state) {
       if (state is ListTodosSuccess) {
-        if (state.todos.isEmpty)
+        if (state.orderedTodos.isEmpty)
           return _emptyTodosView();
         else
           return _todosListView(state.orderedTodos);

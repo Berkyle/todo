@@ -6,26 +6,23 @@ import 'package:todo/queue_cubit.dart';
 import 'package:todo/todo_cubit.dart';
 import 'package:todo/mutation_modal.dart';
 
-// class AppState {
-//   bool configuringAmplify = false;
-//   int selectedIndex = 0;
+// abstract class AppState {}
 
-//   AppState(AppState lastState) {}
-// }
+// class AppState extends AppState {
+class AppState {
+  int navigationIndex = 0;
+  final Queue? selectedQueue;
 
-class AppCubit extends Cubit<int> {
-  AppCubit() : super(1);
-
-  void todosView() {
-    emit(0);
+  AppState({required int navIndex, this.selectedQueue}) {
+    navigationIndex = navIndex;
   }
+}
 
-  void listsView() {
-    emit(1);
-  }
+class AppCubit extends Cubit<AppState> {
+  AppCubit() : super(AppState(navIndex: 0));
 
-  void setNavigationView(int navIndex) {
-    emit(navIndex);
+  void setNavigationView(int navIndex, [Queue? selectedQueue]) {
+    emit(AppState(navIndex: navIndex, selectedQueue: selectedQueue ?? state.selectedQueue));
   }
 
   void showTodoFormModal(BuildContext context, Todo? selectedTodo) {
@@ -38,9 +35,10 @@ class AppCubit extends Cubit<int> {
         value: BlocProvider.of(context),
         child: MutationModal(
           title: title,
+          mutationType: Mutation.TODO,
           onSave: (newTitle) {
             if (selectedTodo == null) {
-              BlocProvider.of<TodoCubit>(context).createTodo(newTitle);
+              BlocProvider.of<TodoCubit>(context).createTodo(newTitle, state.selectedQueue?.id);
             } else {
               BlocProvider.of<TodoCubit>(context).updateTodo(
                 selectedTodo,
@@ -62,6 +60,7 @@ class AppCubit extends Cubit<int> {
         value: BlocProvider.of(context),
         child: MutationModal(
           title: title,
+          mutationType: Mutation.QUEUE,
           onSave: (newTitle) {
             if (selectedQueue == null) {
               BlocProvider.of<QueueCubit>(context).createQueue(newTitle);

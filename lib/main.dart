@@ -32,6 +32,12 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      // theme: ThemeData(
+      //   pageTransitionsTheme: PageTransitionsTheme(builders: {
+      //     TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+      //     TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+      //   }),
+      // ),
       home: MultiBlocProvider(
         providers: [
           BlocProvider<AppCubit>(

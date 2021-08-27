@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:todo/app_cubit.dart';
 import 'package:todo/models/Queue.dart';
 import 'package:todo/queue_cubit.dart';
+import 'package:todo/todo_cubit.dart';
 
 import 'loading_view.dart';
 
@@ -37,6 +38,11 @@ class _ListsState extends State<Lists> {
     return Center(child: Text('No Lists yet!'));
   }
 
+  void _openQueue(Queue queue) {
+    BlocProvider.of<TodoCubit>(context).setQueueId(queue.id);
+    BlocProvider.of<AppCubit>(context).setNavigationView(1, queue);
+  }
+
   Widget _listsView(List<Queue> queues) {
     return Scrollbar(
       child: ReorderableListView.builder(
@@ -50,10 +56,10 @@ class _ListsState extends State<Lists> {
             key: Key(queue.id),
             onDismissed: (direction) {
               if (direction == DismissDirection.startToEnd) {
-                // Open this Queue!
-                // BlocProvider.of<QueueCubit>(context).createTodoTemplate(todo.title);
+                _openQueue(queue);
+              } else {
+                BlocProvider.of<QueueCubit>(context).deleteQueue(queue);
               }
-              BlocProvider.of<QueueCubit>(context).deleteQueue(queue);
             },
             child: Container(
               padding: const EdgeInsets.fromLTRB(0, 4, 0, 4),
@@ -61,16 +67,14 @@ class _ListsState extends State<Lists> {
                 border: Border(bottom: BorderSide(color: Color(0xAAAAAAAA), width: 1.0)),
               ),
               child: ListTile(
-                title: Text(queue.title),
-                onTap: () => BlocProvider.of<AppCubit>(context).showQueueFormModal(context, queue),
-                // leading: Checkbox(
-                //   shape: Icons.favorite,
-                //   value: queue.favorited,
-                //   onChanged: (newValue) {
-                //     BlocProvider.of<QueueCubit>(context).updateQueue(queue, isComplete: newValue!);
-                //   },
-                //   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                // ),
+                title: Text("${queue.title} (${queue.todos.length})"),
+                onTap: () => _openQueue(queue),
+                trailing: IconButton(
+                  icon: Icon(Icons.edit),
+                  onPressed: () {
+                    BlocProvider.of<AppCubit>(context).showQueueFormModal(context, queue);
+                  },
+                ),
               ),
             ),
             background: Container(
