@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:todo/todo_cubit.dart';
+import 'package:todo/app_cubit.dart';
 
 import 'app_cubit.dart';
 import 'lists.dart';
@@ -12,42 +12,60 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  @override
-  void initState() {
-    super.initState();
-    BlocProvider.of<TodoCubit>(context).getTodos();
-  }
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   BlocProvider.of<TodoCubit>(context).getTodos();
+  // }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: _appbar(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: _floatingActionButton(),
-      body: BlocConsumer<AppCubit, AppState>(
-        listener: (context, state) {}, // I guess I need this
-        builder: (context, state) => AnimatedSwitcher(
-          duration: const Duration(milliseconds: 150),
-          child: state.navigationIndex == 0 ? Lists() : Todos(),
-        ),
-      ),
-      bottomNavigationBar: _navBar(),
+    return BlocConsumer<AppCubit, AppState>(
+      listener: (context, state) {}, // I guess I need this
+      builder: (context, state) {
+        return Scaffold(
+          appBar: _appbar(),
+          floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+          floatingActionButton: _floatingActionButton(),
+          body: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 150),
+            child: state.navigationIndex == 0 ? Lists() : Todos(),
+          ),
+          bottomNavigationBar: _navBar(),
+        );
+      },
     );
   }
 
   AppBar _appbar() {
+    final List<Widget> actions = [];
+    // // BlocProvider.of<AppCubit>(context).setNavigationView(itemNumber);
+    // final appState = BlocProvider.of<AppCubit>(context).state;
+    // if (appState.selectedQueue is Queue && appState.navigationIndex == 1) {
+    //   actions.add(
+    //     IconButton(
+    //       onPressed: () {
+    //         BlocProvider.of<QueueCubit>(context).updateQueue(appState.selectedQueue!,
+    //             isOrdered: !appState.selectedQueue!.isOrdered);
+    //       },
+    //       icon: Icon(Icons.light_sharp, color: Colors.white),
+    //     ),
+    //   );
+    // }
     return AppBar(
-        title: BlocConsumer<AppCubit, AppState>(
-            listener: (context, state) {}, // I guess I need this
-            builder: (context, state) {
-              final appBarText = state.navigationIndex == 0
-                  ? 'Lists'
-                  : (state.selectedQueue?.title ?? 'All Todos');
-              return AnimatedSwitcher(
-                duration: const Duration(milliseconds: 150),
-                child: Text(appBarText),
-              );
-            }));
+      title: BlocConsumer<AppCubit, AppState>(
+          listener: (context, state) {}, // I guess I need this
+          builder: (context, state) {
+            final appBarText =
+                state.navigationIndex == 0 ? 'Lists' : (state.selectedQueue?.title ?? 'All Todos');
+            return AnimatedSwitcher(
+              // I should keep these both rendered !!!!
+              duration: const Duration(milliseconds: 150),
+              child: Text(appBarText),
+            );
+          }),
+      actions: actions,
+    );
   }
 
   Widget _navBar() {

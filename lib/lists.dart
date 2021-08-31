@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:todo/app_cubit.dart';
 import 'package:todo/models/Queue.dart';
-import 'package:todo/queue_cubit.dart';
-import 'package:todo/todo_cubit.dart';
 
 import 'loading_view.dart';
 
@@ -15,15 +13,16 @@ class Lists extends StatefulWidget {
 class _ListsState extends State<Lists> {
   @override
   Widget build(BuildContext context) {
-    return (BlocBuilder<QueueCubit, QueueState>(builder: (context, state) {
-      if (state is ListQueuesSuccess) {
-        if (state.queues.isEmpty) {
+    return (BlocBuilder<AppCubit, AppState>(builder: (context, state) {
+      final queueState = state.queues;
+      if (queueState is ListQueuesSuccess) {
+        if (queueState.queues.isEmpty) {
           return _emptyListsView();
         } else {
-          return _listsView(state.orderedQueues);
+          return _listsView(queueState.orderedQueues);
         }
-      } else if (state is ListQueuesFailure) {
-        return _exceptionView(state.exception);
+      } else if (queueState is ListQueuesFailure) {
+        return _exceptionView(queueState.exception);
       } else {
         return LoadingView();
       }
@@ -39,7 +38,6 @@ class _ListsState extends State<Lists> {
   }
 
   void _openQueue(Queue queue) {
-    BlocProvider.of<TodoCubit>(context).setQueueId(queue.id);
     BlocProvider.of<AppCubit>(context).setNavigationView(1, queue);
   }
 
@@ -48,7 +46,7 @@ class _ListsState extends State<Lists> {
       child: ReorderableListView.builder(
         itemCount: queues.length,
         onReorder: (indexA, indexB) async {
-          BlocProvider.of<QueueCubit>(context).moveQueue(indexA, indexB);
+          BlocProvider.of<AppCubit>(context).moveQueue(indexA, indexB);
         },
         itemBuilder: (context, index) {
           final queue = queues[index];
@@ -58,7 +56,7 @@ class _ListsState extends State<Lists> {
               if (direction == DismissDirection.startToEnd) {
                 _openQueue(queue);
               } else {
-                BlocProvider.of<QueueCubit>(context).deleteQueue(queue);
+                BlocProvider.of<AppCubit>(context).deleteQueue(queue);
               }
             },
             child: Container(

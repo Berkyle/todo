@@ -11,6 +11,7 @@ class QueueApi {
         title: responseData['title'],
         favorited: responseData['favorited'],
         order: responseData['order'],
+        isOrdered: responseData['isOrdered'],
         todos: (responseData['todos']['items'] as List<dynamic>)
             .map(TodoApi.convertDataToTodo)
             .toList(),
@@ -22,11 +23,12 @@ class QueueApi {
 
   static Future<void> createQueue(Queue newQueue) async {
     String graphQLDocument = '''mutation CreateQueue {
-      createQueue(input: {id: "${newQueue.id}", favorited: false, title: "${newQueue.title}", order: "${newQueue.order}"}) {
+      createQueue(input: {id: "${newQueue.id}", favorited: false, title: "${newQueue.title}", order: "${newQueue.order}", isOrdered: false}) {
         id
         title
         favorited
         order
+        isOrdered
         todos {
           items {
             id
@@ -48,11 +50,12 @@ class QueueApi {
 
   static Future<void> updateQueue(Queue updatedQueue) async {
     String graphQLDocument = '''mutation UpdateQueue {
-      updateQueue(input: {id: "${updatedQueue.id}", favorited: ${updatedQueue.favorited}, order: "${updatedQueue.order}", title: "${updatedQueue.title}"}) {
+      updateQueue(input: {id: "${updatedQueue.id}", favorited: ${updatedQueue.favorited}, order: "${updatedQueue.order}", isOrdered: ${updatedQueue.isOrdered}, title: "${updatedQueue.title}"}) {
         id
         title
         favorited
         order
+        isOrdered
         todos {
           items {
             id
@@ -88,8 +91,9 @@ class QueueApi {
       listQueues {
         items {
           id
-          order
           favorited
+          order
+          isOrdered
           title
           todos {
             items {
@@ -118,6 +122,7 @@ class QueueApi {
       onCreateQueue {
         id
         order
+        isOrdered
         favorited
         title
         todos {
@@ -155,6 +160,7 @@ class QueueApi {
       onUpdateQueue {
         id
         order
+        isOrdered
         favorited
         title
         todos {

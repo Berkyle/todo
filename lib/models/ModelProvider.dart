@@ -24,29 +24,26 @@ export 'Todo.dart';
 
 class ModelProvider implements ModelProviderInterface {
   @override
-  String version = "445fbe31e96b3436e344e0924ec1877d";
+  String version = "32fe09a833017a32f1ed5f97a1969fff";
   @override
   List<ModelSchema> modelSchemas = [Queue.schema, Todo.schema];
   static final ModelProvider _instance = ModelProvider();
 
   static ModelProvider get instance => _instance;
-
+  
   ModelType getModelTypeByModelName(String modelName) {
-    switch (modelName) {
-      case "Queue":
-        {
-          return Queue.classType;
-        }
-        break;
-      case "Todo":
-        {
-          return Todo.classType;
-        }
-        break;
-      default:
-        {
-          throw Exception("Failed to find model in model provider for model name: " + modelName);
-        }
+    switch(modelName) {
+    case "Queue": {
+    return Queue.classType;
+    }
+    break;
+    case "Todo": {
+    return Todo.classType;
+    }
+    break;
+    default: {
+    throw Exception("Failed to find model in model provider for model name: " + modelName);
+    }
     }
   }
 }

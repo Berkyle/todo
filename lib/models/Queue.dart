@@ -28,6 +28,7 @@ class Queue extends Model {
   final String? _title;
   final bool? _favorited;
   final String? _order;
+  final bool? _isOrdered;
   final List<Todo>? _todos;
 
   @override
@@ -74,6 +75,18 @@ class Queue extends Model {
     }
   }
 
+  bool get isOrdered {
+    try {
+      return _isOrdered!;
+    } catch (e) {
+      throw new DataStoreException(
+          DataStoreExceptionMessages.codeGenRequiredFieldForceCastExceptionMessage,
+          recoverySuggestion:
+              DataStoreExceptionMessages.codeGenRequiredFieldForceCastRecoverySuggestion,
+          underlyingException: e.toString());
+    }
+  }
+
   List<Todo> get todos {
     try {
       return _todos!;
@@ -87,10 +100,16 @@ class Queue extends Model {
   }
 
   const Queue._internal(
-      {required this.id, required title, required favorited, required order, required todos})
+      {required this.id,
+      required title,
+      required favorited,
+      required order,
+      required isOrdered,
+      required todos})
       : _title = title,
         _favorited = favorited,
         _order = order,
+        _isOrdered = isOrdered,
         _todos = todos;
 
   factory Queue(
@@ -98,12 +117,14 @@ class Queue extends Model {
       required String title,
       required bool favorited,
       required String order,
+      required bool isOrdered,
       required List<Todo> todos}) {
     return Queue._internal(
         id: id == null ? UUID.getUUID() : id,
         title: title,
         favorited: favorited,
         order: order,
+        isOrdered: isOrdered,
         todos: todos != null ? List<Todo>.unmodifiable(todos) : todos);
   }
 
@@ -119,6 +140,7 @@ class Queue extends Model {
         _title == other._title &&
         _favorited == other._favorited &&
         _order == other._order &&
+        _isOrdered == other._isOrdered &&
         DeepCollectionEquality().equals(_todos, other._todos);
   }
 
@@ -133,18 +155,26 @@ class Queue extends Model {
     buffer.write("id=" + "$id" + ", ");
     buffer.write("title=" + "$_title" + ", ");
     buffer.write("favorited=" + (_favorited != null ? _favorited!.toString() : "null") + ", ");
-    buffer.write("order=" + "$_order");
+    buffer.write("order=" + "$_order" + ", ");
+    buffer.write("isOrdered=" + (_isOrdered != null ? _isOrdered!.toString() : "null"));
     buffer.write("}");
 
     return buffer.toString();
   }
 
-  Queue copyWith({String? id, String? title, bool? favorited, String? order, List<Todo>? todos}) {
+  Queue copyWith(
+      {String? id,
+      String? title,
+      bool? favorited,
+      String? order,
+      bool? isOrdered,
+      List<Todo>? todos}) {
     return Queue(
         id: id ?? this.id,
         title: title ?? this.title,
         favorited: favorited ?? this.favorited,
         order: order ?? this.order,
+        isOrdered: isOrdered ?? this.isOrdered,
         todos: todos ?? this.todos);
   }
 
@@ -153,6 +183,7 @@ class Queue extends Model {
         _title = json['title'],
         _favorited = json['favorited'],
         _order = json['order'],
+        _isOrdered = json['isOrdered'],
         _todos = json['todos'] is List
             ? (json['todos'] as List)
                 .where((e) => e?['serializedData'] != null)
@@ -165,6 +196,7 @@ class Queue extends Model {
         'title': _title,
         'favorited': _favorited,
         'order': _order,
+        'isOrdered': _isOrdered,
         'todos': _todos?.map((e) => e.toJson()).toList()
       };
 
@@ -172,6 +204,7 @@ class Queue extends Model {
   static final QueryField TITLE = QueryField(fieldName: "title");
   static final QueryField FAVORITED = QueryField(fieldName: "favorited");
   static final QueryField ORDER = QueryField(fieldName: "order");
+  static final QueryField ISORDERED = QueryField(fieldName: "isOrdered");
   static final QueryField TODOS = QueryField(
       fieldName: "todos",
       fieldType: ModelFieldType(ModelFieldTypeEnum.model, ofModelName: (Todo).toString()));
@@ -198,6 +231,9 @@ class Queue extends Model {
 
     modelSchemaDefinition.addField(ModelFieldDefinition.field(
         key: Queue.ORDER, isRequired: true, ofType: ModelFieldType(ModelFieldTypeEnum.string)));
+
+    modelSchemaDefinition.addField(ModelFieldDefinition.field(
+        key: Queue.ISORDERED, isRequired: true, ofType: ModelFieldType(ModelFieldTypeEnum.bool)));
 
     modelSchemaDefinition.addField(ModelFieldDefinition.hasMany(
         key: Queue.TODOS,

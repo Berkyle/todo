@@ -1,19 +1,16 @@
-import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:todo/app_cubit.dart';
-import 'package:todo/loading_view.dart';
-import 'package:todo/queue_cubit.dart';
-import 'package:todo/todo_cubit.dart';
-import 'package:todo/home.dart';
 
 // Amplify Flutter Packages
 import 'package:amplify_flutter/amplify.dart';
+import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 // import 'package:amplify_datastore/amplify_datastore.dart';
 import 'package:amplify_api/amplify_api.dart';
 
-// Generated in previous step
-// import 'models/ModelProvider.dart';
+import 'package:todo/app_cubit.dart';
+import 'package:todo/loading_view.dart';
+import 'package:todo/home.dart';
+
 import 'amplifyconfiguration.dart';
 
 void main() {
@@ -38,22 +35,8 @@ class _MyAppState extends State<MyApp> {
       //     TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
       //   }),
       // ),
-      home: MultiBlocProvider(
-        providers: [
-          BlocProvider<AppCubit>(
-            create: (BuildContext context) => AppCubit(),
-          ),
-          BlocProvider<QueueCubit>(
-            create: (context) => QueueCubit()
-              ..getQueues()
-              ..observeQueues(),
-          ),
-          BlocProvider<TodoCubit>(
-            create: (context) => TodoCubit()
-              ..getTodos()
-              ..observeTodos(),
-          ),
-        ],
+      home: BlocProvider(
+        create: (BuildContext context) => AppCubit()..getInitialData(),
         child: _amplifyConfigured ? Home() : LoadingView(),
       ),
     );
@@ -71,7 +54,7 @@ class _MyAppState extends State<MyApp> {
       await Amplify.addPlugin(AmplifyAPI());
       await Amplify.addPlugin(AmplifyAuthCognito());
       // await Amplify.addPlugin(AmplifyDataStore(modelProvider: ModelProvider.instance));
-      await Amplify.configure(amplifyconfiguration);
+      await Amplify.configure(amplifyconfig);
       setState(() {
         _amplifyConfigured = true;
       });
