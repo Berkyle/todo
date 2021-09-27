@@ -1,24 +1,12 @@
 type Todo
   @model
   @auth(rules: [{ allow: public }])
-  @key(name: "todosByOrder", fields: ["order"], queryField: "todosByOrder")
-  @key(name: "byQueue", fields: ["queueId", "id"]) {
+  # @key(name: "byParent", fields: ["id", "parentId"])
+  @key(name: "todosByOrder", fields: ["id", "order"], queryField: "todosByOrder") {
   id: ID!
   title: String!
   isComplete: Boolean!
-  # queue: Queue @connection
-  queueId: ID
+  parentId: ID
+  # children: [Todo] @connection(keyName: "byParent", fields: ["id"])
   order: String!
-}
-
-type Queue
-  @model
-  @auth(rules: [{ allow: public }])
-  @key(name: "queuesByOrder", fields: ["order"], queryField: "queuesByOrder") {
-  id: ID!
-  title: String!
-  favorited: Boolean!
-  order: String!
-  isOrdered: Boolean!
-  todos: [Todo]! @connection(keyName: "byQueue", fields: ["id"])
 }

@@ -15,7 +15,7 @@ class OrderId {
     assert(id != 'a');
 
     if (id.endsWith('a')) {
-      // 'gmaa' => 'glzzm'
+      // 'mmaa' => 'mlzzm'
       var fromRight = 0;
       while (id[id.length - 1 - fromRight] == 'a' && fromRight < id.length) {
         fromRight += 1;

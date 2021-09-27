@@ -2,29 +2,27 @@ import 'dart:convert';
 
 import 'package:amplify_flutter/amplify.dart';
 import 'package:amplify_api/amplify_api.dart';
-import 'package:todo/models/Todo.dart';
+import 'package:todo/Todo.dart';
+
+String parentIdInputString(String? id) => id is String ? '"$id"' : 'null';
 
 class TodoApi {
-  static Todo convertDataToTodo(dynamic responseData) => Todo(
-        id: responseData['id'],
-        title: responseData['title'],
-        isComplete: responseData['isComplete'],
-        order: responseData['order'],
-        queueId: responseData['queueId'],
-      );
-
-  static List<Todo> convertResponseToTodoList(List<dynamic> items) {
-    return items.map(convertDataToTodo).toList();
-  }
-
   static Future<void> createTodo(Todo newTodo) async {
     String graphQLDocument = '''mutation CreateTodo {
-      createTodo(input: {id: "${newTodo.id}", isComplete: false, title: "${newTodo.title}", order: "${newTodo.order}", queueId: "${newTodo.queueId}"}) {
+      createTodo(
+        input: {
+          id: "${newTodo.id}",
+          isComplete: false,
+          title: "${newTodo.title}",
+          order: "${newTodo.order}",
+          parentId: ${parentIdInputString(newTodo.parentId)},
+        }
+      ) {
         id
         title
         isComplete
         order
-        queueId
+        parentId
       }
     }''';
 
@@ -36,17 +34,26 @@ class TodoApi {
 
   static Future<void> updateTodo(Todo updatedTodo) async {
     String graphQLDocument = '''mutation UpdateTodo {
-      updateTodo(input: {id: "${updatedTodo.id}", isComplete: ${updatedTodo.isComplete}, order: "${updatedTodo.order}", title: "${updatedTodo.title}"}) {
+      updateTodo(
+        input: {
+          id: "${updatedTodo.id}",
+          title: "${updatedTodo.title}"
+          order: "${updatedTodo.order}",
+          parentId: ${parentIdInputString(updatedTodo.parentId)},
+          isComplete: ${updatedTodo.isComplete},
+        }
+      ) {
         id
         title
-        isComplete
         order
-        queueId
+        parentId
+        isComplete
       }
     }''';
 
     final request = GraphQLRequest<String>(document: graphQLDocument);
     final operation = Amplify.API.mutate(request: request);
+
     await operation.response;
   }
 
@@ -62,15 +69,17 @@ class TodoApi {
     await operation.response;
   }
 
-  static Future<List<Todo>> listOrderedTodos() async {
-    String graphQLDocument = '''query ListTodosByOrder {
-      todosByOrder {
+  static Future<List<Todo>> listOrderedRootTodos() async => [];
+
+  static Future<List<Todo>> listRootTodos() async {
+    String graphQLDocument = '''query ListRootTodos {
+      listTodos(filter: {parentId: {eq: null}}) {
         items {
           id
+          title
           isComplete
           order
-          queueId
-          title
+          parentId
         }
         nextToken
       }
@@ -81,7 +90,7 @@ class TodoApi {
     final response = await operation.response;
     final data = json.decode(response.data);
 
-    return convertResponseToTodoList(data['todosByOrder']['items']);
+    return convertResponseToTodoList(data['listTodos']['items']);
   }
 
   static Future<List<Todo>> listTodos() async {
@@ -92,7 +101,29 @@ class TodoApi {
           title
           isComplete
           order
-          queueId
+          parentId
+        }
+        nextToken
+      }
+    }''';
+
+    final request = GraphQLRequest<String>(document: graphQLDocument);
+    final operation = Amplify.API.query(request: request);
+    final response = await operation.response;
+    final data = json.decode(response.data);
+
+    return convertResponseToTodoList(data['listTodos']['items']);
+  }
+
+  static Future<List<Todo>> listTodoChildren(Todo todo) async {
+    String graphQLDocument = '''query ListTodos {
+      listTodos(filter: {parentId: {eq: "${todo.id}"}}) {
+        items {
+          id
+          title
+          isComplete
+          order
+          parentId
         }
         nextToken
       }
@@ -112,7 +143,7 @@ class TodoApi {
         id
         isComplete
         order
-        queueId
+        parentId
         title
       }
     }''';
@@ -140,7 +171,7 @@ class TodoApi {
         id
         isComplete
         order
-        queueId
+        parentId
         title
       }
     }''';
@@ -183,5 +214,17 @@ class TodoApi {
       onError: (e) => print('Delete Subscription failed with error: $e'),
       onDone: () => print('Delete Subscription has been closed successfully'),
     );
+  }
+
+  static Todo convertDataToTodo(dynamic responseData) => Todo(
+        id: responseData['id'],
+        title: responseData['title'],
+        isComplete: responseData['isComplete'],
+        order: responseData['order'],
+        parentId: responseData['parentId'],
+      );
+
+  static List<Todo> convertResponseToTodoList(List<dynamic> items) {
+    return items.map(convertDataToTodo).toList();
   }
 }

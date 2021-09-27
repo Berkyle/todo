@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
-enum Mutation { TODO, QUEUE }
-
 class MutationModal<T> extends StatefulWidget {
   final String? title;
-  final Mutation mutationType;
+  // final Mutation mutationType;
   final void Function(String title) onSave;
 
-  MutationModal({this.title, required this.onSave, required this.mutationType}) : super();
+  MutationModal({this.title, required this.onSave}) : super();
 
   @override
   State<StatefulWidget> createState() => _MutationModalState();
@@ -17,7 +15,6 @@ class MutationModal<T> extends StatefulWidget {
 class _MutationModalState extends State<MutationModal> {
   final _titleController = TextEditingController();
   String? get title => super.widget.title;
-  Mutation get mutationType => super.widget.mutationType;
 
   void Function(String title) get onSave => super.widget.onSave;
 
@@ -29,9 +26,15 @@ class _MutationModalState extends State<MutationModal> {
     super.initState();
   }
 
+  void _onSave() {
+    final todoTitle = _titleController.text;
+    onSave(todoTitle);
+    _titleController.text = '';
+    Navigator.of(context).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final type = mutationType == Mutation.QUEUE ? 'List' : 'Todo';
     // Cubit context passed via modal
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
@@ -47,26 +50,15 @@ class _MutationModalState extends State<MutationModal> {
               extentOffset: _titleController.value.text.length,
             );
           },
-          decoration: InputDecoration(hintText: "$type title here..."),
+          decoration: InputDecoration(hintText: "Todo title here..."),
         ),
         Container(
           padding: const EdgeInsets.all(16.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  final todoTitle = _titleController.text;
-                  onSave(todoTitle);
-                  _titleController.text = '';
-                  Navigator.of(context).pop();
-                },
-                child: Text("Save $type"),
-              ),
+              ElevatedButton(onPressed: () => Navigator.of(context).pop(), child: Text('Cancel')),
+              ElevatedButton(onPressed: _onSave, child: Text("Save Todo")),
             ],
           ),
         )
