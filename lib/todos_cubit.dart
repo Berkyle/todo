@@ -19,6 +19,11 @@ class TodosState {
     required this.tree,
     required this.viewedTodo,
   });
+
+  bool get isViewingRoot => viewedTodo == null;
+  bool get isViewingTodoChildren => viewedTodo is String;
+
+  Todo? get getVisibleTodo => viewedTodo == null ? null : tree.get(viewedTodo!);
 }
 
 const NoValue = const {};
@@ -60,8 +65,6 @@ class TodosCubit extends Cubit<TodosState> {
       viewedTodo: nextViewedTodo,
     ));
   }
-
-  bool get isViewingRoot => _viewedTodo == null;
 
   Todo? get visibleTodo => _viewedTodo is String ? _tree.get(_viewedTodo!) : null;
 
@@ -215,17 +218,13 @@ class TodosCubit extends Cubit<TodosState> {
       updatedOrder = OrderId.getIdBetween(lowerOrder, upperOrder);
     }
 
-    final updatedTodo = movingTodo.copyWith(order: updatedOrder);
-    _tree.update(updatedTodo);
-
-    _emitNextState();
-
+    // Next state is emitted in our update function.
     await updateTodoWith(
-      updatedTodo,
+      movingTodo,
       order: updatedOrder,
-      title: updatedTodo.title,
-      isComplete: updatedTodo.isComplete,
-      // parentId: updatedTodo.parentId,
+      title: movingTodo.title,
+      isComplete: movingTodo.isComplete,
+      // parentId: movingTodo.parentId,
     );
   }
 
@@ -241,6 +240,7 @@ class TodosCubit extends Cubit<TodosState> {
       title: title,
       isComplete: isComplete,
       order: order,
+      parentId: todoToUpdate.parentId,
     );
     _tree.update(updatedTodo);
     _emitNextState();
@@ -257,9 +257,9 @@ class TodosCubit extends Cubit<TodosState> {
       title: title ?? todoToUpdate.title,
       isComplete: isComplete ?? todoToUpdate.isComplete,
       order: order ?? todoToUpdate.order,
+      parentId: todoToUpdate.parentId,
     );
     _tree.update(updatedTodo);
-    print(_tree);
     _emitNextState();
     await TodoApi.updateTodo(updatedTodo);
   }
@@ -294,7 +294,7 @@ class TodosCubit extends Cubit<TodosState> {
   }
 
   void _onDeletedTodo(String deletedTodoId) {
-    if (_tree.get(deletedTodoId) is Todo) {
+    if (_tree.isTodoPresent(deletedTodoId)) {
       _tree.remove(deletedTodoId);
       _emitNextState();
     }

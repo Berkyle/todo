@@ -4,18 +4,17 @@ import 'package:amplify_flutter/amplify.dart';
 import 'package:amplify_api/amplify_api.dart';
 import 'package:todo/Todo.dart';
 
-String parentIdInputString(String? id) => id is String ? '"$id"' : 'null';
-
 class TodoApi {
   static Future<void> createTodo(Todo newTodo) async {
-    String graphQLDocument = '''mutation CreateTodo {
+    String graphQLDocument =
+        '''mutation CreateTodo(\$id: ID!, \$title: String!, \$order: String!, \$isComplete: Boolean!, \$parentId: ID) {
       createTodo(
         input: {
-          id: "${newTodo.id}",
-          isComplete: false,
-          title: "${newTodo.title}",
-          order: "${newTodo.order}",
-          parentId: ${parentIdInputString(newTodo.parentId)},
+          id: \$id,
+          title: \$title,
+          order: \$order,
+          parentId: \$parentId,
+          isComplete: \$isComplete,
         }
       ) {
         id
@@ -26,32 +25,50 @@ class TodoApi {
       }
     }''';
 
-    final request = GraphQLRequest<String>(document: graphQLDocument);
+    final request = GraphQLRequest<String>(
+      document: graphQLDocument,
+      variables: {
+        'id': newTodo.id,
+        'title': newTodo.title,
+        'order': newTodo.order,
+        'parentId': newTodo.parentId,
+        'isComplete': newTodo.isComplete,
+      },
+    );
 
     final operation = Amplify.API.mutate(request: request);
     await operation.response;
   }
 
   static Future<void> updateTodo(Todo updatedTodo) async {
-    String graphQLDocument = '''mutation UpdateTodo {
+    String graphQLDocument =
+        '''mutation UpdateTodo(\$title: String!, \$order: String!, \$isComplete: Boolean!, \$parentId: ID) {
       updateTodo(
         input: {
           id: "${updatedTodo.id}",
-          title: "${updatedTodo.title}"
-          order: "${updatedTodo.order}",
-          parentId: ${parentIdInputString(updatedTodo.parentId)},
-          isComplete: ${updatedTodo.isComplete},
+          title: \$title,
+          order: \$order,
+          parentId: \$parentId,
+          isComplete: \$isComplete,
         }
       ) {
         id
         title
+        isComplete
         order
         parentId
-        isComplete
       }
     }''';
 
-    final request = GraphQLRequest<String>(document: graphQLDocument);
+    final request = GraphQLRequest<String>(
+      document: graphQLDocument,
+      variables: {
+        'title': updatedTodo.title,
+        'order': updatedTodo.order,
+        'parentId': updatedTodo.parentId,
+        'isComplete': updatedTodo.isComplete,
+      },
+    );
     final operation = Amplify.API.mutate(request: request);
 
     await operation.response;
@@ -72,8 +89,11 @@ class TodoApi {
   static Future<List<Todo>> listOrderedRootTodos() async => [];
 
   static Future<List<Todo>> listRootTodos() async {
+    // The use of `notContains` is because sometimes parentId being set to null actually just
+    // deletes the value for that column entirely and then it doesn't show up here later.
+    // It's AWS's fault and I hate them for it but what am i gonna do here broes
     String graphQLDocument = '''query ListRootTodos {
-      listTodos(filter: {parentId: {eq: null}}) {
+      listTodos(filter: {parentId: {notContains: "-"}}) {
         items {
           id
           title

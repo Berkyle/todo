@@ -10,7 +10,7 @@ class Todo {
   Todo({
     String? id,
     required this.title,
-    this.isComplete = false,
+    required this.isComplete,
     required this.parentId,
     required this.order,
   }) {
@@ -51,13 +51,19 @@ class Todo {
   }
 
   /// Make changes to a todo's title, isComplete, or order property.
-  Todo copyWith({String? title, bool? isComplete, String? order}) {
+  Todo copyWith({
+    required String title,
+    required bool isComplete,
+    required String order,
+    required String? parentId,
+  }) {
     return Todo(
-        id: this.id,
-        parentId: this.parentId,
-        title: title ?? this.title,
-        isComplete: isComplete ?? this.isComplete,
-        order: order ?? this.order);
+      id: this.id,
+      title: title,
+      isComplete: isComplete,
+      order: order,
+      parentId: parentId,
+    );
   }
 
   Todo.fromJson(Map<String, dynamic> json)

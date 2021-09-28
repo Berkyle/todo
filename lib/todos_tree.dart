@@ -5,11 +5,6 @@ class TodoNotFoundError extends Error {
   TodoNotFoundError(this.todoId) : super();
 }
 
-class TodoChildrenNotLoadedError extends Error {
-  String? parentId;
-  TodoChildrenNotLoadedError(this.parentId) : super();
-}
-
 /// Utility class to track all todos that have been cached by the local user's app.
 ///
 /// Todos are stored in a tree-like structure, where each root todo (a Todo without a parent)
@@ -34,8 +29,18 @@ class TodosTree {
     return todo;
   }
 
-  /// Get a Todo in the TodoTree.
-  Todo? get(String id) => _get(id);
+  bool isTodoPresent(String id) {
+    final Todo? todo = _get(id);
+    return todo is Todo;
+  }
+
+  /// Get a loaded Todo from the TodoTree, .
+  Todo get(String id) {
+    final Todo? todo = _get(id);
+    assert(todo is Todo);
+    return todo!;
+  }
+
   Todo? _get(String id) => _todos[id];
 
   List<Todo> get rootTodos => _rootTodos.map(_mapIdsToTodos).toList()..sort(orderTodos);
@@ -65,7 +70,7 @@ class TodosTree {
   bool? isTodoChildrenLoaded(String todoId) =>
       _todoNodes[todoId] == null ? null : _todoNodes[todoId]!.children != null;
 
-  /// Get a `Todo`'s children.
+  /// Get a `Todo`'s children, sorted by their order.
   List<Todo> getTodosForParent(String? parentId) {
     if (parentId == null) {
       // Get root todos
@@ -77,9 +82,9 @@ class TodosTree {
     if (parentTodo == null || parentNode == null) throw TodoNotFoundError(parentId);
 
     final todoIds = parentNode.children?.keys.toList();
-    if (todoIds == null) throw TodoChildrenNotLoadedError(parentId);
+    assert(todoIds is List);
 
-    return todoIds.map(_mapIdsToTodos).toList()..sort(orderTodos);
+    return todoIds!.map(_mapIdsToTodos).toList()..sort(orderTodos);
   }
 
   /// Update todo without changing it's parent.
@@ -129,4 +134,7 @@ class TodoNode {
   TodoNode({required this.id, required this.children});
   String id;
   Map<String, TodoNode>? children;
+
+  bool get isChildrenLoaded => children is Map;
+  bool get hasChildren => children is Map && children!.keys.length > 0;
 }
