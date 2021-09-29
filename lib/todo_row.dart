@@ -9,15 +9,13 @@ import 'Todo.dart';
 
 class TodoRow extends StatefulWidget {
   final Todo todo;
-  final bool showSubtitle;
 
-  TodoRow({required this.todo, this.showSubtitle = false, required Key key}) : super(key: key);
+  TodoRow({required this.todo, required Key key}) : super(key: key);
   State<StatefulWidget> createState() => _TodoRowState();
 }
 
 class _TodoRowState extends State<TodoRow> {
   Todo get todo => widget.todo;
-  bool get showSubtitle => widget.showSubtitle;
 
   TodosCubit get _cubit => BlocProvider.of<TodosCubit>(context);
   TodosTree get treeState => _cubit.state.tree;
@@ -46,14 +44,13 @@ class _TodoRowState extends State<TodoRow> {
             colors: [
               Colors.white,
               Colors.white,
-              hasChildrenTodos ? Colors.green[100]! : Colors.red[100]!
+              hasChildrenTodos ? Colors.green[100]! : Colors.white
             ],
           ),
         ),
         child: ListTile(
           dense: true,
           title: Text(todo.title),
-          // onTap: () => _cubit.showTodoFormModal(context, todo),
           onTap: () => _cubit.viewTodo(todo.id),
           leading: Checkbox(
             shape: CircleBorder(),
@@ -64,12 +61,9 @@ class _TodoRowState extends State<TodoRow> {
           trailing: IconButton(
             // icon: Icon(Icons.add),
             icon: Icon(Icons.edit, size: 18),
-            // onPressed: () => _cubit.viewTodo(todo.id),
             onPressed: () => _cubit.showTodoFormModal(context, todo),
           ),
-          subtitle: showSubtitle
-              ? Text(hasChildrenTodos ? '${childrenTodos.length} children' : 'No children')
-              : null,
+          subtitle: hasChildrenTodos ? Text('${childrenTodos.length} items') : null,
         ),
       ),
       background: Container(

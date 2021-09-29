@@ -53,12 +53,18 @@ class _MutationModalState extends State<MutationModal> {
           decoration: InputDecoration(hintText: "Todo title here..."),
         ),
         Container(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(24.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              ElevatedButton(onPressed: () => Navigator.of(context).pop(), child: Text('Cancel')),
-              ElevatedButton(onPressed: _onSave, child: Text("Save Todo")),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('Cancel', style: TextStyle(fontSize: 16)),
+              ),
+              ElevatedButton(
+                onPressed: _onSave,
+                child: Text("Save", style: TextStyle(fontSize: 16)),
+              ),
             ],
           ),
         )

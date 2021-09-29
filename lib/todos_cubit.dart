@@ -23,7 +23,8 @@ class TodosState {
   bool get isViewingRoot => viewedTodo == null;
   bool get isViewingTodoChildren => viewedTodo is String;
 
-  Todo? get getVisibleTodo => viewedTodo == null ? null : tree.get(viewedTodo!);
+  Todo? get getVisibleTodo => isViewingRoot ? null : tree.get(viewedTodo!);
+  List<Todo> get todoList => tree.getTodosForParent(viewedTodo);
 }
 
 const NoValue = const {};
@@ -67,8 +68,6 @@ class TodosCubit extends Cubit<TodosState> {
   }
 
   Todo? get visibleTodo => _viewedTodo is String ? _tree.get(_viewedTodo!) : null;
-
-  List<Todo> _getVisibleOrderedTodoList() => _tree.getTodosForParent(_viewedTodo);
 
   List<Todo> getSortedTodos(List<Todo> todos) => todos..sort(TodosTree.orderTodos);
 
@@ -158,10 +157,12 @@ class TodosCubit extends Cubit<TodosState> {
   }
 
   void _onNewTodo(Todo newTodo) {
-    final parentId = newTodo.parentId;
+    // If we already have a copy of this todo, do nothing - we probably made it locally.
+    if (_tree.isTodoPresent(newTodo.id)) return;
 
     // If a todo's parent has not been loaded, we can just wait to load it when it's needed.
-    if (parentId is String && _tree.get(parentId) == null) return;
+    final parentId = newTodo.parentId;
+    if (parentId is String && !_tree.isTodoPresent(parentId)) return;
 
     _tree.add(newTodo);
     _emitNextState();
@@ -175,10 +176,10 @@ class TodosCubit extends Cubit<TodosState> {
     } else {
       final nextViewTodo = _tree.get(todoId);
       if (nextViewTodo is Todo) {
-        final isLoaded = _tree.isTodoChildrenLoaded(todoId);
         _emitNextState(viewedTodo: nextViewTodo.id);
 
         // Try to stay one layer of todos ahead of the user's visibility.
+        final isLoaded = _tree.isTodoChildrenLoaded(todoId);
         final List<Todo> children = isLoaded == true
             ? _tree.getTodosForParent(todoId)
             : await loadTodoChildren(nextViewTodo);
@@ -204,9 +205,9 @@ class TodosCubit extends Cubit<TodosState> {
 
   Future<void> moveTodo(int startIndex, int endIndex) async {
     assert(_isLoading == false);
-    final todoList = _getVisibleOrderedTodoList();
+    final List<Todo> todoList = state.todoList;
 
-    final movingTodo = todoList[startIndex];
+    final Todo movingTodo = todoList[startIndex];
     var updatedOrder = '';
     if (endIndex == 0) {
       updatedOrder = OrderId.getPrevious(todoList.first.order);

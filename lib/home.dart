@@ -50,8 +50,8 @@ class _HomeState extends State<Home> {
       title: BlocConsumer<TodosCubit, TodosState>(
           listener: (context, state) {}, // I guess I need this
           builder: (context, state) {
-            final appBarText =
-                state.viewedTodo == null ? 'Todos' : state.tree.get(state.viewedTodo!).title;
+            String appBarText = state.isViewingRoot ? 'Todos' : state.getVisibleTodo!.title;
+            appBarText += ' (${state.todoList.length})';
             return AnimatedSwitcher(
               // I should keep these both rendered !!!!
               duration: const Duration(milliseconds: 150),
