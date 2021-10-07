@@ -2,38 +2,25 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:todo/todos_tree.dart';
 
 import 'todos_cubit.dart';
-import 'Todo.dart';
+import 'todo.dart';
 
-class TodoRow extends StatefulWidget {
+class TodoRow extends StatelessWidget {
   final Todo todo;
 
   TodoRow({required this.todo, required Key key}) : super(key: key);
-  State<StatefulWidget> createState() => _TodoRowState();
-}
-
-class _TodoRowState extends State<TodoRow> {
-  Todo get todo => widget.todo;
-
-  TodosCubit get _cubit => BlocProvider.of<TodosCubit>(context);
-  TodosTree get treeState => _cubit.state.tree;
 
   @override
   Widget build(BuildContext context) {
-    final childrenTodos = _cubit.state.tree.getTodosForParent(todo.id);
-    final hasChildrenTodos = childrenTodos.length > 0;
+    final TodosCubit cubit = BlocProvider.of<TodosCubit>(context);
 
     return Dismissible(
       key: Key(todo.id),
-      // key: GlobalKey(debugLabel: todo.id),
-      direction: todo.parentId == null ? DismissDirection.endToStart : DismissDirection.horizontal,
-      onDismissed: (direction) => direction == DismissDirection.endToStart
-          ? hasChildrenTodos // swipe right to left
-              ? _cubit.viewTodo(todo.id) // Todo has children, let's check em out
-              : _cubit.deleteTodo(todo) // Todo has no children and can be deleted
-          : _cubit.viewTodo(todo.parentId), // swipe left to right
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) => !todo.isChildrenLoaded || todo.childrenIds.isNotEmpty
+          ? cubit.viewTodo(todo.id) // Todo has children, let's check em out
+          : cubit.deleteTodo(todo), // Todo has no children and can be deleted
       child: Container(
         padding: const EdgeInsets.fromLTRB(0, 4, 0, 4),
         decoration: BoxDecoration(
@@ -44,26 +31,44 @@ class _TodoRowState extends State<TodoRow> {
             colors: [
               Colors.white,
               Colors.white,
-              hasChildrenTodos ? Colors.green[100]! : Colors.white
+              todo.childrenIds.isNotEmpty ? Colors.green.shade100 : Colors.white,
             ],
           ),
         ),
         child: ListTile(
+          selected: cubit.state.selectedTodo == todo.id,
+          enabled: todo.isChildrenLoaded,
           dense: true,
+          onTap: () => cubit.viewTodo(todo.id),
           title: Text(todo.title),
-          onTap: () => _cubit.viewTodo(todo.id),
           leading: Checkbox(
             shape: CircleBorder(),
             value: todo.isComplete,
-            onChanged: (newValue) => _cubit.updateTodo(todo, isComplete: newValue!),
+            onChanged: (newValue) => cubit.updateTodo(todo, isComplete: newValue!),
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-          trailing: IconButton(
-            // icon: Icon(Icons.add),
-            icon: Icon(Icons.edit, size: 18),
-            onPressed: () => _cubit.showTodoFormModal(context, todo),
+          trailing: PopupMenuButton<EditOptions>(
+            onSelected: (EditOptions result) {
+              switch (result) {
+                case EditOptions.Rename:
+                  return cubit.showTodoFormModal(context, todo);
+                case EditOptions.Move:
+                  return cubit.toggleSelectedTodo(todo.id);
+              }
+            },
+            itemBuilder: (BuildContext context) => EditOptions.values
+                .map(
+                  (editOption) => PopupMenuItem<EditOptions>(
+                    value: editOption,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [optionIcon[editOption]!, Text(optionText[editOption]!)],
+                    ),
+                  ),
+                )
+                .toList(),
           ),
-          subtitle: hasChildrenTodos ? Text('${childrenTodos.length} items') : null,
+          subtitle: todo.childrenIds.isNotEmpty ? Text('${todo.childrenIds.length} items') : null,
         ),
       ),
       background: Container(
@@ -75,9 +80,9 @@ class _TodoRowState extends State<TodoRow> {
       secondaryBackground: Container(
         alignment: Alignment.centerRight,
         padding: EdgeInsets.symmetric(horizontal: 20),
-        color: hasChildrenTodos ? Colors.green[200] : Colors.red[200],
+        color: todo.childrenIds.isNotEmpty ? Colors.green.shade200 : Colors.red[200],
         child: Icon(
-          hasChildrenTodos ? Icons.arrow_forward : Icons.delete,
+          todo.childrenIds.isNotEmpty ? Icons.arrow_forward : Icons.delete,
           color: Colors.black,
           size: 32,
         ),
@@ -85,3 +90,16 @@ class _TodoRowState extends State<TodoRow> {
     );
   }
 }
+
+enum EditOptions { Rename, Move }
+// enum EditOptions { Rename, Move, Deselect }
+Set<EditOptions> selectedEditOptions = {...EditOptions.values};
+// Set<EditOptions> selectedEditOptions = { EditOptions.Rename, EditOptions.Deselect };
+final Map<EditOptions, String> optionText = {
+  EditOptions.Rename: 'Rename',
+  EditOptions.Move: 'Move',
+};
+final Map<EditOptions, Widget> optionIcon = {
+  EditOptions.Rename: Icon(Icons.edit),
+  EditOptions.Move: Icon(Icons.miscellaneous_services_sharp),
+};

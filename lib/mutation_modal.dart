@@ -3,7 +3,6 @@ import 'package:flutter/widgets.dart';
 
 class MutationModal<T> extends StatefulWidget {
   final String? title;
-  // final Mutation mutationType;
   final void Function(String title) onSave;
 
   MutationModal({this.title, required this.onSave}) : super();

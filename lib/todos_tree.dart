@@ -1,140 +1,122 @@
-import 'package:todo/Todo.dart';
+import 'package:todo/todo.dart';
 
 class TodoNotFoundError extends Error {
   String todoId;
   TodoNotFoundError(this.todoId) : super();
 }
 
+class ChildrenNotLoadedError extends Error {}
+
 /// Utility class to track all todos that have been cached by the local user's app.
 ///
 /// Todos are stored in a tree-like structure, where each root todo (a Todo without a parent)
 /// is a root to a separate tree.
 class TodosTree {
-  /// Set of all rootTodos and their children, sorted into TodoNodes and
-  /// indexed by each root `Todo`'s id.
+  /// Internal: Set of all rootTodo ids, as strings.
+  ///
+  /// Every item in the _todos map either
+  /// a) has a parentId property populated with the id of another todo in the _todos map, XOR
+  /// b) is represented in the _rootTodos set by the todo's id.
   Set<String> _rootTodos = {};
 
-  /// Set of all `TodoNode`s in the tree, indexed by their `Todo`'s ID.
-  Map<String, TodoNode> _todoNodes = {};
-
-  /// Map of all todos, indexed by their id.
+  /// Internal: Map of all todos, indexed by their id.
+  ///
+  /// Todos have a `children` property which is either [null] meaning the todo's children
+  /// have not been loaded, or a Map of Todos which will always be a subset of this value.
+  ///
+  /// This value serves as the single source of truth for all todos in the application.
   Map<String, Todo> _todos = {};
 
-  /// Callback FN to order a list of Todos.
-  static int orderTodos(Todo a, Todo b) => a.order.compareTo(b.order);
+  /// Internal: get a todo from the _todos Map property - it is generally assumed that if an id is
+  /// sent in, the user only knows about it because they got it from this structure.
+  ///
+  /// For a method that returns a non-optional Todo, see `Todo? get(String id)`.
+  Todo? _get(String id) => _todos[id];
 
-  Todo _mapIdsToTodos(String id) {
-    final todo = _get(id);
-    if (todo == null) throw TodoNotFoundError(id);
-    return todo;
-  }
+  /// Map an iterable structure of todo IDs to a list of Todo objects, sorted by their order value.
+  List<Todo> _mapIdsToTodosSorted(Iterable<String> todoIds) => todoIds.map(getTodo).toList()
+    ..sort((Todo todoA, Todo todoB) => todoA.order.compareTo(todoB.order));
 
-  bool isTodoPresent(String id) {
-    final Todo? todo = _get(id);
-    return todo is Todo;
-  }
+  /// Whether the TodosTree contains a Todo with the given [id].
+  bool contains(String id) => _todos.containsKey(id);
 
-  /// Get a loaded Todo from the TodoTree, .
-  Todo get(String id) {
+  /// Get a loaded Todo from the TodoTree.
+  Todo getTodo(String id) {
     final Todo? todo = _get(id);
     assert(todo is Todo);
     return todo!;
   }
 
-  Todo? _get(String id) => _todos[id];
+  /// Get the list of root `Todo`s. Conceptually, these todos are the "base" of the TodosTree.
+  List<Todo> get rootTodos => _mapIdsToTodosSorted(_rootTodos);
 
-  List<Todo> get rootTodos => _rootTodos.map(_mapIdsToTodos).toList()..sort(orderTodos);
+  /// Get a `Todo`'s children, sorted by their order.
+  List<Todo> childrenOf(String? parentId) {
+    if (parentId == null) return rootTodos;
+    final Todo parentTodo = getTodo(parentId);
+    if (!parentTodo.isChildrenLoaded) throw ChildrenNotLoadedError();
+    return _mapIdsToTodosSorted(parentTodo.childrenIds);
+  }
 
-  /// Add a Todo to the TodoTree.
+  /// Add a Todo to the TodosTree.
   void add(Todo todo) {
     final parentId = todo.parentId;
-    final todoNode = TodoNode(id: todo.id, children: {});
     if (parentId == null) {
       _rootTodos.add(todo.id);
     } else {
-      final parentNode = _todoNodes[parentId];
-      if (parentNode == null) {
-        throw new Exception('ffjdslakf');
-      } else if (parentNode.children == null) {
-        throw new Exception('ffjdslakf ???');
-      }
-      parentNode.children![todo.id] = todoNode;
+      final Todo parentTodo = getTodo(parentId);
+      parentTodo.addChild(todo.id);
     }
-
-    _todoNodes[todo.id] = todoNode;
     _todos[todo.id] = todo;
   }
 
-  /// Returns true if the todo's children have been loaded,
-  /// false if they have not been loaded, and null if the todo is not yet loaded.
-  bool? isTodoChildrenLoaded(String todoId) =>
-      _todoNodes[todoId] == null ? null : _todoNodes[todoId]!.children != null;
+  /// Add all Todos in a list to the TodosTree.
+  void addAll(List<Todo> todos) => todos.forEach(add);
 
-  /// Get a `Todo`'s children, sorted by their order.
-  List<Todo> getTodosForParent(String? parentId) {
-    if (parentId == null) {
-      // Get root todos
-      return _rootTodos.map(_mapIdsToTodos).toList()..sort(orderTodos);
-    }
+  /// Update todo without changing it's parent. To change a todo's parent, use updateParentId.
+  Todo update(Todo updatedTodo) => _todos.update(updatedTodo.id, (_) => updatedTodo);
 
-    final parentTodo = _get(parentId);
-    final parentNode = _todoNodes[parentId];
-    if (parentTodo == null || parentNode == null) throw TodoNotFoundError(parentId);
-
-    final todoIds = parentNode.children?.keys.toList();
-    assert(todoIds is List);
-
-    return todoIds!.map(_mapIdsToTodos).toList()..sort(orderTodos);
+  /// Update todo's parentId, as well as the todo's next and previous parent todos by removing
+  /// the todo from the old parent's children into the children of the next parent.
+  void updateParentId(String todoId, String? parentId) {
+    // remove and add will manage the todo's previous and next parents' children.
+    final Todo? todo = remove(todoId);
+    if (todo == null) throw TodoNotFoundError(todoId);
+    final Todo updatedTodo = todo.copyWith(parentId: parentId, children: todo.childrenIds);
+    add(updatedTodo);
   }
 
-  /// Update todo without changing it's parent.
-  void update(Todo updatedTodo) {
-    _todos.update(updatedTodo.id, (_) => updatedTodo);
-  }
+  /// Remove a todo from the TodosTree.
+  Todo? remove(String id) {
+    final Todo? todo = _todos.remove(id);
+    if (todo == null) return null;
 
-  void remove(String id) {
-    final Todo? todoToRemove = _get(id);
-    if (todoToRemove == null) {
-      throw new Exception('That todo ain\'t here broe');
-    }
-
-    final String? parentId = todoToRemove.parentId;
+    final String? parentId = todo.parentId;
     if (parentId == null) {
-      _rootTodos.remove(todoToRemove.id);
+      _rootTodos.remove(id);
     } else {
-      final parentNode = _todoNodes[parentId];
-      if (parentNode == null) {
-        throw new Exception('ruh roh');
-      } else if (parentNode.children == null) {
-        throw new Exception('seriously what the hell');
-      }
-      parentNode.children!.remove(id);
+      final Todo parentTodo = getTodo(parentId);
+      parentTodo.removeChild(id);
     }
-    _todoNodes.remove(id);
-    _todos.remove(id);
+
+    return todo;
   }
 
-  @override
-  String toString() {
-    var buffer = new StringBuffer();
+  bool canMoveTodoTo(String selectedTodoId, String? targetTodoId) =>
+      targetTodoId == null ||
+      (selectedTodoId != targetTodoId && !todoHasAncestor(targetTodoId, selectedTodoId));
 
-    buffer.write("TodosTree {\n");
-    buffer.write("  _rootTodos=" + "$_rootTodos" + ",\n");
-    buffer.write("  _todoNodes=" + "$_todoNodes" + ",\n");
-    buffer.write("  _todos=" + "$_todos" + ",\n");
-    buffer.write("}\n");
+  bool todoHasAncestor(String todoId, String? ancestorId) {
+    if (ancestorId == null) return true;
 
-    return buffer.toString();
+    Todo? todo = _get(todoId);
+
+    while (todo is Todo) {
+      if (todo.parentId == null) return false;
+      if (todo.parentId == ancestorId) return true;
+      todo = _get(todo.parentId!);
+    }
+
+    return false;
   }
-}
-
-/// A method to associate `Todo`s with their parents and children.
-/// A parent Todo
-class TodoNode {
-  TodoNode({required this.id, required this.children});
-  String id;
-  Map<String, TodoNode>? children;
-
-  bool get isChildrenLoaded => children is Map;
-  bool get hasChildren => children is Map && children!.keys.length > 0;
 }

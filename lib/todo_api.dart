@@ -2,12 +2,17 @@ import 'dart:convert';
 
 import 'package:amplify_flutter/amplify.dart';
 import 'package:amplify_api/amplify_api.dart';
-import 'package:todo/Todo.dart';
+import 'package:todo/todo.dart';
+
+/// idk just gets all the todos.
+const String todoFieldQuery = Todo.todoFieldQuery;
+
+const todoFieldQueryItems = 'items $todoFieldQuery';
 
 class TodoApi {
   static Future<void> createTodo(Todo newTodo) async {
-    String graphQLDocument =
-        '''mutation CreateTodo(\$id: ID!, \$title: String!, \$order: String!, \$isComplete: Boolean!, \$parentId: ID) {
+    String graphQLDocument = '''
+    mutation CreateTodo(\$id: ID!, \$title: String!, \$order: String!, \$isComplete: Boolean!, \$parentId: ID) {
       createTodo(
         input: {
           id: \$id,
@@ -16,13 +21,8 @@ class TodoApi {
           parentId: \$parentId,
           isComplete: \$isComplete,
         }
-      ) {
-        id
-        title
-        isComplete
-        order
-        parentId
-      }
+      )
+      $todoFieldQuery
     }''';
 
     final request = GraphQLRequest<String>(
@@ -41,8 +41,8 @@ class TodoApi {
   }
 
   static Future<void> updateTodo(Todo updatedTodo) async {
-    String graphQLDocument =
-        '''mutation UpdateTodo(\$title: String!, \$order: String!, \$isComplete: Boolean!, \$parentId: ID) {
+    String graphQLDocument = '''
+    mutation UpdateTodo(\$title: String!, \$order: String!, \$isComplete: Boolean!, \$parentId: ID) {
       updateTodo(
         input: {
           id: "${updatedTodo.id}",
@@ -51,13 +51,8 @@ class TodoApi {
           parentId: \$parentId,
           isComplete: \$isComplete,
         }
-      ) {
-        id
-        title
-        isComplete
-        order
-        parentId
-      }
+      ) 
+      $todoFieldQuery
     }''';
 
     final request = GraphQLRequest<String>(
@@ -88,84 +83,62 @@ class TodoApi {
 
   static Future<List<Todo>> listOrderedRootTodos() async => [];
 
-  static Future<List<Todo>> listRootTodos() async {
+  static Stream<List<Todo>> loadRootTodos([String? nextToken]) async* {
     // The use of `notContains` is because sometimes parentId being set to null actually just
     // deletes the value for that column entirely and then it doesn't show up here later.
     // It's AWS's fault and I hate them for it but what am i gonna do here broes
-    String graphQLDocument = '''query ListRootTodos {
-      listTodos(filter: {parentId: {notContains: "-"}}) {
-        items {
-          id
-          title
-          isComplete
-          order
-          parentId
-        }
+    String graphQLDocument = '''query ListRootTodos(\$nextToken: String) {
+      listTodos(filter: {parentId: {notContains: "-"}}, nextToken: \$nextToken) {
+        $todoFieldQueryItems
         nextToken
       }
     }''';
 
-    final request = GraphQLRequest<String>(document: graphQLDocument);
-    final operation = Amplify.API.query(request: request);
+    final operation = Amplify.API.query(
+      request: GraphQLRequest<String>(
+        document: graphQLDocument,
+        variables: {'nextToken': nextToken},
+      ),
+    );
     final response = await operation.response;
     final data = json.decode(response.data);
 
-    return convertResponseToTodoList(data['listTodos']['items']);
+    yield convertResponseToTodoList(data['listTodos']['items']);
+
+    // If a nextToken exists, get those todos too. Else, close the stream.
+    if (data['listTodos']['nextToken'] is String) {
+      yield* loadRootTodos(data['listTodos']['nextToken']);
+    }
   }
 
-  static Future<List<Todo>> listTodos() async {
-    String graphQLDocument = '''query ListTodos {
-      listTodos {
-        items {
-          id
-          title
-          isComplete
-          order
-          parentId
-        }
+  static Stream<List<Todo>> loadTodoChildren(Todo todo, [String? nextToken]) async* {
+    String graphQLDocument = '''query ListTodos(\$nextToken: String) {
+      listTodos(filter: {parentId: {eq: "${todo.id}"}}, nextToken: \$nextToken) {
+        $todoFieldQueryItems
         nextToken
       }
     }''';
 
-    final request = GraphQLRequest<String>(document: graphQLDocument);
-    final operation = Amplify.API.query(request: request);
+    final operation = Amplify.API.query(
+      request: GraphQLRequest<String>(
+        document: graphQLDocument,
+        variables: {'nextToken': nextToken},
+      ),
+    );
     final response = await operation.response;
     final data = json.decode(response.data);
 
-    return convertResponseToTodoList(data['listTodos']['items']);
-  }
+    yield convertResponseToTodoList(data['listTodos']['items']);
 
-  static Future<List<Todo>> listTodoChildren(Todo todo) async {
-    String graphQLDocument = '''query ListTodos {
-      listTodos(filter: {parentId: {eq: "${todo.id}"}}) {
-        items {
-          id
-          title
-          isComplete
-          order
-          parentId
-        }
-        nextToken
-      }
-    }''';
-
-    final request = GraphQLRequest<String>(document: graphQLDocument);
-    final operation = Amplify.API.query(request: request);
-    final response = await operation.response;
-    final data = json.decode(response.data);
-
-    return convertResponseToTodoList(data['listTodos']['items']);
+    // If a nextToken exists, get those todos too. Else, close the stream.
+    if (data['listTodos']['nextToken'] is String) {
+      yield* loadTodoChildren(todo, data['listTodos']['nextToken']);
+    }
   }
 
   static void observeCreateTodo(void Function(Todo) onNewTodo) {
     String gqlOnCreateTodo = '''subscription OnCreateTodo {
-      onCreateTodo {
-        id
-        isComplete
-        order
-        parentId
-        title
-      }
+      onCreateTodo $todoFieldQuery
     }''';
 
     Amplify.API.subscribe(
@@ -175,7 +148,7 @@ class TodoApi {
         final data = event.data;
         if (data != null) {
           final newTodoJSON = json.decode(data as String)['onCreateTodo'];
-          final newTodo = convertDataToTodo(newTodoJSON);
+          final newTodo = convertDataToTodo(newTodoJSON, true);
           onNewTodo(newTodo);
         }
       },
@@ -187,13 +160,7 @@ class TodoApi {
 
   static void observeUpdateTodo(void Function(Todo) onUpdatedTodo) {
     String gqlOnCreateTodo = '''subscription MySubscription {
-      onUpdateTodo {
-        id
-        isComplete
-        order
-        parentId
-        title
-      }
+      onUpdateTodo $todoFieldQuery
     }''';
 
     Amplify.API.subscribe(
@@ -236,12 +203,14 @@ class TodoApi {
     );
   }
 
-  static Todo convertDataToTodo(dynamic responseData) => Todo(
+  static Todo convertDataToTodo(dynamic responseData, [bool isLoaded = false]) => Todo(
         id: responseData['id'],
         title: responseData['title'],
-        isComplete: responseData['isComplete'],
-        order: responseData['order'],
         parentId: responseData['parentId'],
+        order: responseData['order'],
+        childrenIds: Set(),
+        isChildrenLoaded: isLoaded,
+        isComplete: responseData['isComplete'],
       );
 
   static List<Todo> convertResponseToTodoList(List<dynamic> items) {

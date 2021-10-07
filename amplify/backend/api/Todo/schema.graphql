@@ -1,6 +1,6 @@
 type Todo
   @model
-  @auth(rules: [{ allow: public }])
+  # @auth(rules: [{ allow: public }])
   # @key(name: "byParent", fields: ["id", "parentId"])
   @key(name: "todosByOrder", fields: ["id", "order"], queryField: "todosByOrder") {
   id: ID!
