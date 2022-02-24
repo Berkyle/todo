@@ -86,7 +86,6 @@ class TodoApi {
   static Stream<List<Todo>> loadRootTodos([String? nextToken]) async* {
     // The use of `notContains` is because sometimes parentId being set to null actually just
     // deletes the value for that column entirely and then it doesn't show up here later.
-    // It's AWS's fault and I hate them for it but what am i gonna do here broes
     String graphQLDocument = '''query ListRootTodos(\$nextToken: String) {
       listTodos(filter: {parentId: {notContains: "-"}}, nextToken: \$nextToken) {
         $todoFieldQueryItems

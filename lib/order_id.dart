@@ -1,5 +1,5 @@
 class OrderId {
-  static String getInitialId() => 'mmm'; // 3 fucking "m"s :')
+  static String getInitialId() => 'mmm'; // starting order for only-child todos
 
   static String getNext(String id) {
     if (id.endsWith('z')) {
